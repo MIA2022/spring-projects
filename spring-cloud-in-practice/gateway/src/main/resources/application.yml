@@ -1,0 +1,74 @@
+debug: ${SCIP_DEBUG:false}
+
+logging:
+  file:
+    path: ${SCIP_LOGGING_FILE_PATH:./log}
+
+server:
+  address: 0.0.0.0
+  port: 8080
+
+spring:
+  application:
+    name: spring-cloud-in-practice-gateway
+  config:
+    import: "optional:consul:"
+  redis:
+    host: ${SCIP_SPRING_REDIS_HOST:localhost}
+    port: ${SCIP_SPRING_REDIS_PORT:6379}
+    password: ${SCIP_SPRING_REDIS_PASSWORD:}
+    connectTimeout: 5s
+  session:
+    store-type: redis
+    timeout: 8h
+    redis:
+      namespace: scip:session
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            clientId: scip
+            clientSecret: 42f9a259-5b5e-40b4-ad84-dfa2e18e2df4
+            scope: openid
+            authorizationGrantType: authorization_code
+            redirectUri: '{baseUrl}/login/oauth2/code/{registrationId}'
+        provider:
+          keycloak:
+            authorizationUri: ${SCIP_SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION_URI:http://localhost:8180/auth/realms/JW/protocol/openid-connect/auth}
+            tokenUri: ${SCIP_SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI:http://localhost:8180/auth/realms/JW/protocol/openid-connect/token}
+            userInfoUri: ${SCIP_SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USER_INFO_URI:http://localhost:8180/auth/realms/JW/protocol/openid-connect/userinfo}
+            jwkSetUri: ${SCIP_SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWT_JWK_SET_URI:http://localhost:8180/auth/realms/JW/protocol/openid-connect/certs}
+            userNameAttribute: sub
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+    consul:
+      host: ${SCIP_SPRING_CLOUD_CONSUL_HOST:localhost}
+      port: ${SCIP_SPRING_CLOUD_CONSUL_PORT:8500}
+      discovery:
+        enabled: true
+        register: true
+      config:
+        enabled: true
+        prefixes:
+          - spring-cloud-in-practice
+        name: gateway
+        format: YAML
+
+feign:
+  autoconfiguration:
+    jackson:
+      enabled: true
+  client:
+    config:
+      spring-cloud-in-practice-auth:
+        connectTimeout: 5000
+        readTimeout: 10000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
